@@ -21,279 +21,279 @@
 
 class ActionsImportorderlines
 {
-	/**
-	 * @param   array         $parameters     Hook metadatas (context, etc...)
-	 * @param   Commande    $object        The object to process
-	 * @param   string          $action        Current action (if set). Generally create or edit or null
-	 * @param   HookManager     $hookmanager    Hook manager propagated to allow calling another hook
-	 * @return  int                             < 0 on error, 0 on success, 1 to replace standard code
-	 */
-	public function addMoreActionsButtons(array $parameters, Commande $object, &$action, HookManager $hookmanager)
-	{
-		global $langs;
+    /**
+     * @param array $parameters Hook metadatas (context, etc...)
+     * @param Commande $object The object to process
+     * @param string $action Current action (if set). Generally create or edit or null
+     * @param HookManager $hookmanager Hook manager propagated to allow calling another hook
+     * @return  int                             < 0 on error, 0 on success, 1 to replace standard code
+     */
+    public function addMoreActionsButtons(array $parameters, Commande $object, &$action, HookManager $hookmanager)
+    {
+        global $langs;
 
-		$langs->load('importorderlines@importorderlines');
+        $langs->load('importorderlines@importorderlines');
 
-		if ($object->statut < 1) {
-			print '<div class="inline-block divButAction"><a class="butAction" href="' . $_SERVER["PHP_SELF"] . '?id=' . $object->id . '&amp;action=import">' . $langs->trans('ImportOrderLines') . '</a></div>';
-		}
+        if ($object->statut < 1) {
+            print '<div class="inline-block divButAction"><a class="butAction" href="' . $_SERVER["PHP_SELF"] . '?id=' . $object->id . '&amp;action=import">' . $langs->trans('ImportOrderLines') . '</a></div>';
+        }
 
-		return 0;
-	}
+        return 0;
+    }
 
-	/**
-	 * @param   array         $parameters     Hook metadatas (context, etc...)
-	 * @param   Commande    $object        The object to process
-	 * @param   string          $action        Current action (if set). Generally create or edit or null
-	 * @param   HookManager     $hookmanager    Hook manager propagated to allow calling another hook
-	 * @return  int                             < 0 on error, 0 on success, 1 to replace standard code
-	 */
-	public function formConfirm(array $parameters, Commande $object, &$action, HookManager $hookmanager)
-	{
-		global $langs, $db, $conf;
+    /**
+     * @param array $parameters Hook metadatas (context, etc...)
+     * @param Commande $object The object to process
+     * @param string $action Current action (if set). Generally create or edit or null
+     * @param HookManager $hookmanager Hook manager propagated to allow calling another hook
+     * @return  int                             < 0 on error, 0 on success, 1 to replace standard code
+     */
+    public function formConfirm(array $parameters, Commande $object, &$action, HookManager $hookmanager)
+    {
+        global $langs, $db, $conf;
 
-		$langs->load('importorderlines@importorderlines');
+        $langs->load('importorderlines@importorderlines');
 
-		if ($object->statut >= 1) {
-			return 0;
-		}
+        if ($object->statut >= 1) {
+            return 0;
+        }
 
-		require __DIR__.'/Utils.php';
+        require __DIR__ . '/Utils.php';
 
-		if ($action == 'import') {
+        if ($action == 'import') {
 
-			$this->resprints = Utils::uploadForm(
-				$_SERVER["PHP_SELF"] . '?id=' . $object->id,
-				$langs->trans('ImportOrderLines'),
-				$langs->trans('ConfirmCloneOrder', $object->ref),
-				'confirm_import',
-				$langs->trans('SelectFileToImport')
-			);
+            $this->resprints = Utils::uploadForm(
+                $_SERVER["PHP_SELF"] . '?id=' . $object->id,
+                $langs->trans('ImportOrderLines'),
+                $langs->trans('ConfirmCloneOrder', $object->ref),
+                'confirm_import',
+                $langs->trans('SelectFileToImport')
+            );
 
-		} elseif ($action == 'confirm_import') {
+        } elseif ($action == 'confirm_import') {
 
-			try {
+            try {
 
-				if (!isset($_FILES['uploadfile'])) {
-					throw new Exception($langs->trans('UploadFileError'));
-				}
+                if (!isset($_FILES['uploadfile'])) {
+                    throw new Exception($langs->trans('UploadFileError'));
+                }
 
-				$file = $_FILES['uploadfile'];
+                $file = $_FILES['uploadfile'];
 
-				if (!is_uploaded_file($file['tmp_name'])) {
-					throw new Exception($langs->trans('UploadFileError'));
-				}
+                if (!is_uploaded_file($file['tmp_name'])) {
+                    throw new Exception($langs->trans('UploadFileError'));
+                }
 
-				if ($file['error'] != UPLOAD_ERR_OK) {
-					throw new Exception($langs->trans('UploadFileError'), $file['error']);
-				}
+                if ($file['error'] != UPLOAD_ERR_OK) {
+                    throw new Exception($langs->trans('UploadFileError'), $file['error']);
+                }
 
-				require __DIR__.'/../lib/phpoffice/phpexcel/Classes/PHPExcel.php';
+                require __DIR__ . '/../lib/phpoffice/phpexcel/Classes/PHPExcel.php';
 
-				//Supported PHPExcel File readers to ensure we deal with a Spreadsheet.
-				$supported_filereaders = array(
-					'CSV',
-					'Excel2007',
-					'Excel5',
-					'OOCalc',
-					'Excel2003XML'
-				);
+                //Supported PHPExcel File readers to ensure we deal with a Spreadsheet.
+                $supported_filereaders = array(
+                    'CSV',
+                    'Excel2007',
+                    'Excel5',
+                    'OOCalc',
+                    'Excel2003XML'
+                );
 
-				if (!in_array(PHPExcel_IOFactory::identify($file['tmp_name']), $supported_filereaders)) {
-					throw new Exception($langs->trans('UploadFileErrorUnsupportedFormat'));
-				}
+                if (!in_array(PHPExcel_IOFactory::identify($file['tmp_name']), $supported_filereaders)) {
+                    throw new Exception($langs->trans('UploadFileErrorUnsupportedFormat'));
+                }
 
-				try {
-					$excelfd = PHPExcel_IOFactory::load($file['tmp_name']);
-				} catch (PHPExcel_Reader_Exception $e) {
-					throw new Exception($e->getMessage());
-				}
+                try {
+                    $excelfd = PHPExcel_IOFactory::load($file['tmp_name']);
+                } catch (PHPExcel_Reader_Exception $e) {
+                    throw new Exception($e->getMessage());
+                }
 
-				$activesheet = $excelfd->getActiveSheet();
+                $activesheet = $excelfd->getActiveSheet();
 
-				//Check of the format
-				$a1 = $activesheet->getCell('A1')->getValue();
-				$a1 = trim(strtolower($a1));				
-				$a1 = $a1 == 'ref';
-				$b1 = $activesheet->getCell('B1')->getValue();
-				$b1 = trim(strtolower($b1));				
-				$b1 = $b1 == 'label';
-				$c1 = $activesheet->getCell('C1')->getValue();
-				$c1 = trim(strtolower($c1));				
-				$c1 = $c1 == 'qty';
-				$d1 = $activesheet->getCell('D1')->getValue();
-				$d1 = trim(strtolower($d1));				
-				$d1 = $d1 == 'price';
-				$e1 = $activesheet->getCell('E1')->getValue();
-				$e1 = trim(strtolower($e1));				
-				$e1 = $e1 == 'cost';
-				$f1 = $activesheet->getCell('F1')->getValue();
-				$f1 = trim(strtolower($f1));				
-				$f1 = $f1 == 'discount';
+                //Check of the format
+                $a1 = $activesheet->getCell('A1')->getValue();
+                $a1 = trim(strtolower($a1));
+                $a1 = $a1 == 'ref';
+                $b1 = $activesheet->getCell('B1')->getValue();
+                $b1 = trim(strtolower($b1));
+                $b1 = $b1 == 'label';
+                $c1 = $activesheet->getCell('C1')->getValue();
+                $c1 = trim(strtolower($c1));
+                $c1 = $c1 == 'qty';
+                $d1 = $activesheet->getCell('D1')->getValue();
+                $d1 = trim(strtolower($d1));
+                $d1 = $d1 == 'price';
+                $e1 = $activesheet->getCell('E1')->getValue();
+                $e1 = trim(strtolower($e1));
+                $e1 = $e1 == 'cost';
+                $f1 = $activesheet->getCell('F1')->getValue();
+                $f1 = trim(strtolower($f1));
+                $f1 = $f1 == 'discount';
 
-				if (!$a1 || !$b1 || !$c1 || !$d1 || !$e1) {
-					throw new Exception($langs->trans('UploadFileErrorFormat'));
-				}
-				//Force to use an specific price by product
-				$usePriceInFile = false;
-				$priceInFile = null;
-				if($d1){
-					$usePriceInFile = true;
-				}
+                if (!$a1 || !$b1 || !$c1) {
+                    throw new Exception($langs->trans('UploadFileErrorFormat'));
+                }
+                //Force to use an specific price by product
+                $usePriceInFile = false;
+                $priceInFile = null;
+                if ($d1) {
+                    $usePriceInFile = true;
+                }
 
-				//Force to use an specific cost by product
-				$useCostInFile = false;
-				$costInFile = null;
-				if($e1){
-					$useCostInFile = true;
-				}
+                //Force to use an specific cost by product
+                $useCostInFile = false;
+                $costInFile = null;
+                if ($e1) {
+                    $useCostInFile = true;
+                }
 
-				//Force to apply an specific discount by product
-				$useDiscountInFile = false;
-				$discountInFile = null;
-				if($f1){
-					$useDiscountInFile = true;
-				}
+                //Force to apply an specific discount by product
+                $useDiscountInFile = false;
+                $discountInFile = null;
+                if ($f1) {
+                    $useDiscountInFile = true;
+                }
 
-				$maxrow = $activesheet->getHighestRow();
+                $maxrow = $activesheet->getHighestRow();
 
-				//Verify all products exist and have a positive quantity
-				for ($i = 2; $i <= $maxrow; $i++) {
-					$ref = $activesheet->getCellByColumnAndRow(0, $i)->getValue();
-					$qty = (int) $activesheet->getCellByColumnAndRow(2, $i)->getValue();
-						$prod = new Product($db);
-						
-						$rowNum =  " [At Row:" . $i . "]";
-						$fileHasErrors = false;
-						
-						if ($prod->fetch('', $ref) <= 0) {
-							$ref = $ref? $ref : "undefined";
-							$ref .= $rowNum;					
-							$fileHasErrors = true;
-							throw new Exception($langs->trans('ErrorProductNotFound', $ref));
-						}
-						if ($qty <= 0) {
-							$ref .= $rowNum;
-							$fileHasErrors = true;
-							throw new Exception($langs->trans('ErrorProductInvalidQty', $ref));
-						}
-						if($usePriceInFile){
-							//Use price as float
-							$priceInFile = (float) $activesheet->getCellByColumnAndRow(3, $i)->getValue();							
-							if ($priceInFile <= 0) {
-								$ref .= $rowNum;
-								$fileHasErrors = true;
-								throw new Exception($langs->trans('ErrorProductInvalidPrice', $ref));
-							}
-						}
-						if($useCostInFile){
-							//Use cost as float
-							$costInFile = (float) $activesheet->getCellByColumnAndRow(4, $i)->getValue();							
-							if ($costInFile <= 0) {
-								$ref .= $rowNum;
-								$fileHasErrors = true;
-								throw new Exception($langs->trans('ErrorProductInvalidCost', $ref));
-							}
-						}
+                //Verify all products exist and have a positive quantity
+                for ($i = 2; $i <= $maxrow; $i++) {
+                    $ref = $activesheet->getCellByColumnAndRow(0, $i)->getValue();
+                    $qty = (int)$activesheet->getCellByColumnAndRow(2, $i)->getValue();
+                    $prod = new Product($db);
 
-						if($useDiscountInFile){
-							$discountInFile = $activesheet->getCellByColumnAndRow(5, $i)->getValue();
-							if(!is_numeric($discountInFile)){
-								throw new Exception($langs->trans('ErrorProductInvalidDiscount', $ref));
-							}
-							//Use discount as float
-							$discountInFile = (float) $activesheet->getCellByColumnAndRow(5, $i)->getValue();							
-							if ($discountInFile < 0) {//Discount can be zero
-								$ref .= $rowNum;
-								$fileHasErrors = true;
-								throw new Exception($langs->trans('ErrorProductInvalidDiscount', $ref));
-							}
-						}
+                    $rowNum = " [At Row:" . $i . "]";
+                    $fileHasErrors = false;
 
-						unset($prod);
-						if($fileHasErrors){
-							//Delete temporary file
-							unlink($file['tmp_name']);
-						}
-				}
-				//Create order lines
-				for ($i = 2; $i <= $maxrow; $i++) {
-					$ref = $activesheet->getCellByColumnAndRow(0, $i)->getValue();
-					$label = $activesheet->getCellByColumnAndRow(1, $i)->getValue();
-					$qty = (int) $activesheet->getCellByColumnAndRow(2, $i)->getValue();					
+                    if ($prod->fetch('', $ref) <= 0) {
+                        $ref = $ref ?: "undefined";
+                        $ref .= $rowNum;
+                        $fileHasErrors = true;
+                        throw new Exception($langs->trans('ErrorProductNotFound', $ref));
+                    }
+                    if ($qty <= 0) {
+                        $ref .= $rowNum;
+                        $fileHasErrors = true;
+                        throw new Exception($langs->trans('ErrorProductInvalidQty', $ref));
+                    }
+                    if ($usePriceInFile) {
+                        //Use price as float
+                        $priceInFile = (float)$activesheet->getCellByColumnAndRow(3, $i)->getValue();
+                        if ($priceInFile <= 0) {
+                            $ref .= $rowNum;
+                            $fileHasErrors = true;
+                            throw new Exception($langs->trans('ErrorProductInvalidPrice', $ref));
+                        }
+                    }
+                    if ($useCostInFile) {
+                        //Use cost as float
+                        $costInFile = (float)$activesheet->getCellByColumnAndRow(4, $i)->getValue();
+                        if ($costInFile <= 0) {
+                            $ref .= $rowNum;
+                            $fileHasErrors = true;
+                            throw new Exception($langs->trans('ErrorProductInvalidCost', $ref));
+                        }
+                    }
 
-					$prod = new Product($db);
+                    if ($useDiscountInFile) {
+                        $discountInFile = $activesheet->getCellByColumnAndRow(5, $i)->getValue();
+                        if (!is_numeric($discountInFile)) {
+                            throw new Exception($langs->trans('ErrorProductInvalidDiscount', $ref));
+                        }
+                        //Use discount as float
+                        $discountInFile = (float)$activesheet->getCellByColumnAndRow(5, $i)->getValue();
+                        if ($discountInFile < 0) {//Discount can be zero
+                            $ref .= $rowNum;
+                            $fileHasErrors = true;
+                            throw new Exception($langs->trans('ErrorProductInvalidDiscount', $ref));
+                        }
+                    }
 
-					if ($prod->fetch('', $ref) <= 0) {
-						throw new Exception($langs->trans('ErrorProductNotFound', $ref));
-					}
-					//Use price in file
-					if($usePriceInFile){
-						$priceInFile = (float) $activesheet->getCellByColumnAndRow(3, $i)->getValue();
-						//trunc more than 2 decimals if exist
-						$priceInFile = bcdiv($priceInFile, 1, 2);
-					}
-					//Use cost in file
-					if($useCostInFile){
-						$costInFile = (float) $activesheet->getCellByColumnAndRow(4, $i)->getValue();
-						//trunc more than 2 decimals if exist
-						$costInFile = bcdiv($costInFile, 1, 4);
-					}
-					//Use discount in file
-					if($useDiscountInFile){
-						$discountInFile = (float) $activesheet->getCellByColumnAndRow(5, $i)->getValue();
-						//trunc more than 2 decimals if exist
-						$discountInFile = bcdiv($discountInFile, 1, 2);
-					}
-					Utils::addOrderLine($object, $prod, $label, $qty, $priceInFile, $costInFile, $discountInFile);
+                    unset($prod);
+                    if ($fileHasErrors) {
+                        //Delete temporary file
+                        unlink($file['tmp_name']);
+                    }
+                }
+                //Create order lines
+                for ($i = 2; $i <= $maxrow; $i++) {
+                    $ref = $activesheet->getCellByColumnAndRow(0, $i)->getValue();
+                    $label = $activesheet->getCellByColumnAndRow(1, $i)->getValue();
+                    $qty = (int)$activesheet->getCellByColumnAndRow(2, $i)->getValue();
 
-					unset($prod);					
-				}
+                    $prod = new Product($db);
 
-			} catch (Exception $e) {
+                    if ($prod->fetch('', $ref) <= 0) {
+                        throw new Exception($langs->trans('ErrorProductNotFound', $ref));
+                    }
+                    //Use price in file
+                    if ($usePriceInFile) {
+                        $priceInFile = (float)$activesheet->getCellByColumnAndRow(3, $i)->getValue();
+                        //trunc more than 2 decimals if exist
+                        $priceInFile = bcdiv($priceInFile, 1, 2);
+                    }
+                    //Use cost in file
+                    if ($useCostInFile) {
+                        $costInFile = (float)$activesheet->getCellByColumnAndRow(4, $i)->getValue();
+                        //trunc more than 2 decimals if exist
+                        $costInFile = bcdiv($costInFile, 1, 4);
+                    }
+                    //Use discount in file
+                    if ($useDiscountInFile) {
+                        $discountInFile = (float)$activesheet->getCellByColumnAndRow(5, $i)->getValue();
+                        //trunc more than 2 decimals if exist
+                        $discountInFile = bcdiv($discountInFile, 1, 2);
+                    }
+                    Utils::addOrderLine($object, $prod, $label, $qty, $priceInFile, $costInFile, $discountInFile);
 
-				$message = $e->getMessage();
+                    unset($prod);
+                }
 
-				setEventMessage($e->getMessage(), 'errors');
+            } catch (Exception $e) {
 
-				if ($e->getCode()) {
-					$message .= '. Error code: '.$e->getCode();
-				}
+                $message = $e->getMessage();
 
-				dol_syslog('[importorderlines] '.$message, LOG_DEBUG);
+                setEventMessage($e->getMessage(), 'errors');
 
-				return -1;
-			}
+                if ($e->getCode()) {
+                    $message .= '. Error code: ' . $e->getCode();
+                }
 
-			//Delete temporary file
-			unlink($file['tmp_name']);
+                dol_syslog('[importorderlines] ' . $message, LOG_DEBUG);
 
-			//Reload the object with new lines
-			$object->fetch($object->id);
+                return -1;
+            }
 
-			if (empty($conf->global->MAIN_DISABLE_PDF_AUTOUPDATE)) {
+            //Delete temporary file
+            unlink($file['tmp_name']);
 
-				// Define output language
-				$outputlangs = $langs;
-				$newlang = GETPOST('lang_id', 'alpha');
-				if (! empty($conf->global->MAIN_MULTILANGS) && empty($newlang))
-					$newlang = $object->thirdparty->default_lang;
-				if (! empty($newlang)) {
-					$outputlangs = new Translate("", $conf);
-					$outputlangs->setDefaultLang($newlang);
-				}
+            //Reload the object with new lines
+            $object->fetch($object->id);
 
-				// PDF
-				$hidedetails = (! empty($conf->global->MAIN_GENERATE_DOCUMENTS_HIDE_DETAILS) ? 1 : 0);
-				$hidedesc = (! empty($conf->global->MAIN_GENERATE_DOCUMENTS_HIDE_DESC) ? 1 : 0);
-				$hideref = (! empty($conf->global->MAIN_GENERATE_DOCUMENTS_HIDE_REF) ? 1 : 0);
+            if (empty($conf->global->MAIN_DISABLE_PDF_AUTOUPDATE)) {
 
-				$object->generateDocument($object->modelpdf, $outputlangs, $hidedetails, $hidedesc, $hideref);
-			}
+                // Define output language
+                $outputlangs = $langs;
+                $newlang = GETPOST('lang_id', 'alpha');
+                if (!empty($conf->global->MAIN_MULTILANGS) && empty($newlang))
+                    $newlang = $object->thirdparty->default_lang;
+                if (!empty($newlang)) {
+                    $outputlangs = new Translate("", $conf);
+                    $outputlangs->setDefaultLang($newlang);
+                }
 
-		}
+                // PDF
+                $hidedetails = (!empty($conf->global->MAIN_GENERATE_DOCUMENTS_HIDE_DETAILS) ? 1 : 0);
+                $hidedesc = (!empty($conf->global->MAIN_GENERATE_DOCUMENTS_HIDE_DESC) ? 1 : 0);
+                $hideref = (!empty($conf->global->MAIN_GENERATE_DOCUMENTS_HIDE_REF) ? 1 : 0);
 
-		return 0;
-	}
+                $object->generateDocument($object->modelpdf, $outputlangs, $hidedetails, $hidedesc, $hideref);
+            }
+
+        }
+
+        return 0;
+    }
 
 }
